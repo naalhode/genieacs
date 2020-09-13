@@ -27,11 +27,19 @@ import * as db from "../lib/ui/db";
 import * as db2 from "../lib/db";
 import * as cache from "../lib/cache";
 import { version as VERSION } from "../package.json";
+import * as xmpp from "../lib/xmpp-client";
 
 logger.init("ui", VERSION);
 
 const SERVICE_ADDRESS = config.get("UI_INTERFACE") as string;
 const SERVICE_PORT = config.get("UI_PORT") as number;
+
+const XMPP_HOST = config.get("XMPP_HOST") as string;
+const XMPP_PORT = config.get("XMPP_PORT") as number;
+const XMPP_DOMAIN = config.get("XMPP_DOMAIN") as string;
+const XMPP_USERNAME = config.get("XMPP_USERNAME") as string;
+const XMPP_PASSWORD = config.get("XMPP_PASSWORD") as string;
+const XMPP_RESOURCE= config.get("XMPP_RESOURCE") as string;
 
 function exitWorkerGracefully(): void {
   setTimeout(exitWorkerUngracefully, 5000).unref();
@@ -94,6 +102,7 @@ if (!cluster.worker) {
       pid: process.pid,
     });
     stopping = true;
+	xmpp.stop();
     server.stop().then(exitWorkerGracefully).catch(exitWorkerUngracefully);
   });
 
@@ -107,6 +116,7 @@ if (!cluster.worker) {
   const initPromise = Promise.all([db2.connect(), cache.connect()])
     .then(() => {
       server.start(SERVICE_PORT, SERVICE_ADDRESS, ssl, _listener);
+	  xmpp.start(XMPP_HOST, XMPP_PORT, XMPP_DOMAIN, XMPP_USERNAME, XMPP_PASSWORD, XMPP_RESOURCE, false);
     })
     .catch((err) => {
       setTimeout(() => {
@@ -117,6 +127,7 @@ if (!cluster.worker) {
   process.on("SIGINT", () => {
     stopping = true;
     initPromise.finally(() => {
+	  xmpp.stop();
       server.stop().then(exitWorkerGracefully).catch(exitWorkerUngracefully);
     });
   });
@@ -124,6 +135,7 @@ if (!cluster.worker) {
   process.on("SIGTERM", () => {
     stopping = true;
     initPromise.finally(() => {
+	  xmpp.stop();
       server.stop().then(exitWorkerGracefully).catch(exitWorkerUngracefully);
     });
   });

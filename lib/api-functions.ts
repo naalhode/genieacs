@@ -29,6 +29,7 @@ import {
 import {
   httpConnectionRequest,
   udpConnectionRequest,
+  xmppConnectionRequest,
 } from "./connection-request";
 import { Expression, Task } from "./types";
 import { flattenDevice } from "./mongodb-functions";
@@ -44,7 +45,7 @@ export async function connectionRequest(
     device = flattenDevice(res);
   }
 
-  let connectionRequestUrl, udpConnectionRequestAddress, username, password;
+  let connectionRequestUrl, udpConnectionRequestAddress, username, password, connReqJabberId;
 
   if (device["InternetGatewayDevice.ManagementServer.ConnectionRequestURL"]) {
     connectionRequestUrl = (device[
@@ -65,6 +66,11 @@ export async function connectionRequest(
         "InternetGatewayDevice.ManagementServer.ConnectionRequestPassword"
       ] || {}
     ).value || [""])[0];
+	connReqJabberId = ((
+      device[
+        "InternetGatewayDevice.ManagementServer.ConnReqJabberID"
+      ] || {}
+    ).value || [""])[0];
   } else {
     connectionRequestUrl = (device[
       "Device.ManagementServer.ConnectionRequestURL"
@@ -77,6 +83,9 @@ export async function connectionRequest(
     ).value || [""])[0];
     password = ((
       device["Device.ManagementServer.ConnectionRequestPassword"] || {}
+    ).value || [""])[0];
+	connReqJabberId = ((
+      device["Device.ManagementServer.ConnReqJabberID"] || {}
     ).value || [""])[0];
   }
 
@@ -155,6 +164,16 @@ export async function connectionRequest(
       deviceId
     );
   }
+  
+  let xmppProm;
+  if (connReqJabberId) {
+    xmppProm = xmppConnectionRequest(
+      connReqJabberId,
+      authExp,
+      debug,
+      deviceId
+    );
+  }
 
   try {
     await httpConnectionRequest(
@@ -166,8 +185,13 @@ export async function connectionRequest(
       deviceId
     );
   } catch (err) {
-    if (!udpProm) throw err;
-    await udpProm;
+    if (udpProm) {
+      await udpProm;
+    } else if (xmppProm) {
+      await xmppProm;
+    } else {
+      throw err
+    }
   }
 }
 

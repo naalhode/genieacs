@@ -26,6 +26,7 @@ import { Expression } from "./types";
 import * as auth from "./auth";
 import * as extensions from "./extensions";
 import * as debug from "./debug";
+import * as xmpp from "./xmpp-client";
 
 async function extractAuth(
   exp: Expression,
@@ -221,4 +222,21 @@ export async function udpConnectionRequest(
     [username, password, authExp] = await extractAuth(authExp, null);
   }
   client.close();
+}
+
+export async function xmppConnectionRequest(
+  connReqJabberId: string,
+  authExp: Expression,
+  _debug: boolean,
+  deviceId: string
+): Promise<void> {
+  let username: string;
+  let password: string;
+
+  [username, password, authExp] = await extractAuth(authExp, null);
+
+  if (username == null) username = "";
+  if (password == null) password = "";
+ 
+  await xmpp.connectionRequest(connReqJabberId, username, password, _debug); 
 }

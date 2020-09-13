@@ -196,6 +196,55 @@ export function outgoingUdpMessage(
     body: body,
   };
 
+
+  if (DEBUG_FORMAT === "yaml")
+    appendFileSync(DEBUG_FILE, "---\n" + yaml.stringify(msg));
+  else if (DEBUG_FORMAT === "json")
+    appendFileSync(DEBUG_FILE, JSON.stringify(msg) + "\n");
+  else throw new Error(`Unrecognized DEBUG_FORMAT option`);
+}
+
+export function incomingXmppMessage(
+  deviceId: string,
+  service: string,
+  jabberId: string,
+  body: string
+): void {
+  if (!DEBUG_FILE) return;
+  const now = new Date();
+  const msg = {
+    event: "incoming XMPP message",
+    timestamp: now,
+    deviceId: deviceId,
+    service: service,
+    jabberId: jabberId,
+    body: body,
+  };
+
+  if (DEBUG_FORMAT === "yaml")
+    appendFileSync(DEBUG_FILE, "---\n" + yaml.stringify(msg));
+  else if (DEBUG_FORMAT === "json")
+    appendFileSync(DEBUG_FILE, JSON.stringify(msg) + "\n");
+  else throw new Error(`Unrecognized DEBUG_FORMAT option`);
+}
+
+export function outgoingXmppMessage(
+  deviceId: string,
+  service: string,
+  jabberId: string,
+  body: string
+): void {
+  if (!DEBUG_FILE) return;
+  const now = new Date();
+  const msg = {
+    event: "outgoing XMPP message",
+    timestamp: now,
+    deviceId: deviceId,
+    service: service,
+    jabberId: jabberId,
+    body: body,
+  };
+
   if (DEBUG_FORMAT === "yaml")
     appendFileSync(DEBUG_FILE, "---\n" + yaml.stringify(msg));
   else if (DEBUG_FORMAT === "json")
