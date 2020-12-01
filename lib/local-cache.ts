@@ -188,7 +188,7 @@ async function fetchPresets(): Promise<Preset[]> {
     for (const c of preset["configurations"]) {
       switch (c.type) {
         case "age":
-          _provisions.push(["refresh", c.name, c.age]);
+          _provisions.push(["refresh", c.name, +c.age]);
           break;
 
         case "value":
@@ -475,7 +475,7 @@ export function getConfig(
   key: string,
   context: Record<string, unknown>,
   now: number,
-  cb?: (Expression) => Expression
+  cb?: (e: Expression) => Expression
 ): string | number | boolean | null {
   const snapshot = snapshots.get(snapshotKey);
   if (!snapshot) throw new Error("Cache snapshot does not exist");

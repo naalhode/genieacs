@@ -87,9 +87,13 @@ if (!cluster.worker) {
     cluster.stop();
   });
 } else {
-  const ssl = {
-    key: config.get("UI_SSL_KEY") as string,
-    cert: config.get("UI_SSL_CERT") as string,
+  const key = config.get("UI_SSL_KEY") as string;
+  const cert = config.get("UI_SSL_CERT") as string;
+  const options = {
+    port: SERVICE_PORT,
+    host: SERVICE_ADDRESS,
+    ssl: key && cert ? { key, cert } : null,
+    timeout: 30000,
   };
 
   let stopping = false;
@@ -108,15 +112,13 @@ if (!cluster.worker) {
 
   const _listener = (req, res): void => {
     if (stopping) res.setHeader("Connection", "close");
-    listener(req, res).catch((err) => {
-      throw err;
-    });
+    listener(req, res);
   };
 
   const initPromise = Promise.all([db2.connect(), cache.connect()])
     .then(() => {
-      server.start(SERVICE_PORT, SERVICE_ADDRESS, ssl, _listener);
-	  xmpp.start(XMPP_HOST, XMPP_PORT, XMPP_DOMAIN, XMPP_USERNAME, XMPP_PASSWORD, XMPP_RESOURCE, false);
+      server.start(options, _listener);
+	    xmpp.start(XMPP_HOST, XMPP_PORT, XMPP_DOMAIN, XMPP_USERNAME, XMPP_PASSWORD, XMPP_RESOURCE, false);
     })
     .catch((err) => {
       setTimeout(() => {
